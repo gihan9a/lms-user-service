@@ -16,3 +16,11 @@
 $router->get('/', function () use ($router) {
     return $router->app->version();
 });
+
+$router->post('/', [
+    'uses' => 'UserController@create',
+]);
+
+$router->put('/{id}', [
+    'uses' => 'UserController@update',
+]);
