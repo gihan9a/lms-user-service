@@ -12,5 +12,6 @@ Homestead.yaml
 .env
 .phpunit.cache
 .phpunit.result.cache
+infection.log
 
 !.gitkeep
