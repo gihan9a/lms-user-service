@@ -8,7 +8,7 @@ declare(strict_types=1);
  * @covers App\Models\User
  * @covers App\Providers\AuthServiceProvider
  */
-class UserTest extends TestCase
+class UserControllerTest extends TestCase
 {
     /**
      *
