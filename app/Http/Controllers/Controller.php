@@ -36,15 +36,15 @@ class Controller extends BaseController
      * Find model by id or fail
      *
      * @param string  $class
-     * @param string $id
+     * @param int $id
      * 
      * @return Model
      * 
      * @author Gihan S <gihanshp@gmail.com>
      */
-    public function findModelOrFail(string $class, string $id): Model
+    protected function findModelOrFail(string $class, int $id): Model
     {
-        $model = $class::find((int)$id);
+        $model = $class::find($id);
         if ($model === null) {
             $name = strtolower((new \ReflectionClass($class))->getShortName());
             throw new ModelNotFoundException('Unable to find ' . $name . ' ' . $id, 404);

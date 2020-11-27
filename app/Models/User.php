@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Laravel\Lumen\Auth\Authorizable;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Laravel\Lumen\Auth\Authorizable;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Hash;
 
 class User extends Model implements AuthenticatableContract, AuthorizableContract
 {
@@ -39,7 +40,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * 
      * @author Gihan S <gihanshp@gmail.com>
      */
-    protected static function getProps(): array
+    private static function getProps(): array
     {
         return [
             'name' => ['required', 'max:255'],
@@ -58,6 +59,11 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
 
     /**
      * Get rules
+     * 
+     * @important There's something spookey with this function visibility
+     * It should be public to access from external
+     * But infection creates a Mutant for protected visibility.
+     * Somehow laravel/lumen can access protected methods from controllers
      *
      * @param string $scenario Rules for the scenario
      * 
@@ -65,7 +71,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * 
      * @author Gihan S <gihanshp@gmail.com>
      */
-    public static function getRules(string $scenario = ''): array
+    protected static function getRules(string $scenario = ''): array
     {
         $props = static::getProps();
         switch ($scenario) {
@@ -83,5 +89,19 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
             default:
                 return $props;
         }
+    }
+
+    /**
+     * Get password hash of the plain text password
+     *
+     * @param string $password
+     * 
+     * @return string 
+     * 
+     * @author Gihan S <gihanshp@gmail.com>
+     */
+    protected static function getPasswordHash(string $password): string
+    {
+        return Hash::make($password);
     }
 }

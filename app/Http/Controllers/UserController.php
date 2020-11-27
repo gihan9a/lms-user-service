@@ -15,22 +15,21 @@ class UserController extends Controller
         $this->validate($request, User::getRules('create'));
 
         $request->merge([
-            'password' => Hash::make($request->get('password')),
+            'password' => User::getPasswordHash($request->input('password')),
         ]);
 
         return $this->respond(User::create($request->all()));
     }
 
-    public function update($id, Request $request): \Illuminate\Http\JsonResponse
+    public function update(int $id, Request $request): \Illuminate\Http\JsonResponse
     {
         $this->validate($request, User::getRules('update'));
 
         $user = $this->findModelOrFail(User::class, $id);
-        
         // hash password
-        if (($password = $request->get('password', false)) !== false) {
+        if (($password = $request->input('password')) !== null) {
             $request->merge([
-                'password' => Hash::make($password),
+                'password' => User::getPasswordHash($password),
             ]);
         }
         $user->update($request->all());

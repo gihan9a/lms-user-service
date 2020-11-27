@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
+namespace Tests\Integration;
+
 use Laravel\Lumen\Testing\DatabaseMigrations;
+use App\Models\User;
+use Tests\TestCase;
 
 /**
  * @covers App\Console\Kernel
@@ -16,15 +20,20 @@ class UserControllerTest extends TestCase
 {
     use DatabaseMigrations;
 
-    protected function createUser(): void
+    private function getUserValidData(): array
     {
-        $this->post('/', [
+        return [
             'name' => 'User1',
             'email' => 'user1@example.com',
             'password' => 'user1pass',
             'passwordConfirm' => 'user1pass',
             'role' => 'customer',
-        ]);
+        ];
+    }
+
+    protected function createUser(): void
+    {
+        $this->post('/', $this->getUserValidData());
     }
 
     /**
@@ -61,6 +70,28 @@ class UserControllerTest extends TestCase
             ],
             'errors',
         ]);
+        $data = $this->getUserValidData();
+        $password = $data['password'];
+        unset($data['password']);
+        unset($data['passwordConfirm']);
+        $this->seeInDatabase('users', $data);
+        $user = User::firstWhere('email', $data['email']);
+        $this->assertNotNull($user);
+        $this->assertNotEmpty($user->password);
+        $this->assertNotEquals($password, $user->password);
+
+        // try to create user with validation fail
+        $data = $this->getUserValidData();
+        // remove email and validate
+        unset($data['email']);
+        $this->json('POST', '/', $data)
+            ->seeJson([
+                'data' => null,
+                'errors' => [
+                    'email' => ['The email field is required.'],
+                ],
+                'code' => 400,
+            ]);
     }
 
     /**
@@ -105,7 +136,11 @@ class UserControllerTest extends TestCase
             ->seeJson([
                 'name' => 'User11',
             ]);
-
+        // verify from db
+        $user = User::find(1);
+        $this->assertNotNull($user);
+        $this->assertNotEmpty($user->password);
+        $this->assertNotEquals($user1data3['password'], $user->password);
 
         $user2data = [
             'name' => 'User22',

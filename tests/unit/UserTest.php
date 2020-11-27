@@ -5,15 +5,17 @@ declare(strict_types=1);
 namespace App\Tests\Unit;
 
 use Illuminate\Validation\Rule;
-use PHPUnit\Framework\TestCase;
-use \App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;
+use Tests\TestCase;
 
 /**
  * @covers App\Models\User
+ * @covers App\Providers\AuthServiceProvider
  */
 class UserTest extends TestCase
 {
-    public function testGetRules()
+    public function testGetRules(): void
     {
         $rules = [
             'name' => ['required', 'max:255'],
@@ -40,5 +42,12 @@ class UserTest extends TestCase
             'password' => ['min:6'],
             'passwordConfirm' => ['required_with:password', 'same:password'],
         ], $rulesUpdate);
+    }
+
+    public function testGetPasswordHash(): void
+    {
+        $str = 'password';
+        $hash = User::getPasswordHash($str);
+        $this->assertNotEquals($str, $hash);
     }
 }

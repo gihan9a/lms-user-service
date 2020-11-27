@@ -26,21 +26,6 @@ class Handler extends ExceptionHandler
     ];
 
     /**
-     * Report or log an exception.
-     *
-     * This is a great spot to send exceptions to Sentry, Bugsnag, etc.
-     *
-     * @param  \Throwable  $exception
-     * @return void
-     *
-     * @throws \Exception
-     */
-    public function report(Throwable $exception)
-    {
-        parent::report($exception);
-    }
-
-    /**
      * Render an exception into an HTTP response.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -58,7 +43,7 @@ class Handler extends ExceptionHandler
             $code = Response::HTTP_INTERNAL_SERVER_ERROR;
         } elseif ($exception instanceof ModelNotFoundException) {
             $errors['error'] = [$exception->getMessage()];
-            $code = Response::HTTP_NOT_FOUND;
+            $code = $exception->getCode();
         } elseif ($exception instanceof AuthorizationException) {
             $errors['error'] = [$exception->getMessage()];
             $code = Response::HTTP_UNAUTHORIZED;
