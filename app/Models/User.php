@@ -33,19 +33,28 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     ];
 
     /**
-     * Validation rules
-     * 
-     * @var array
+     * Get model props and rules
+     *
+     * @return array
      * 
      * @author Gihan S <gihanshp@gmail.com>
      */
-    static array $rules = [
-        'name' => 'required|max:255',
-        'email' => 'required|email',
-        'role' => 'required|in:customer,csr,manger,admin',
-        'password' => 'required',
-        'passwordConfirm' => 'required|same:password',
-    ];
+    protected static function getProps(): array
+    {
+        return [
+            'name' => ['required', 'max:255'],
+            'email' => ['required', 'email'],
+            'role' => [
+                'required',
+                Rule::in(['customer', 'csr', 'manager', 'admin']),
+            ],
+            'password' => ['required', 'min:6'],
+            'passwordConfirm' => [
+                'required_with:password',
+                'same:password'
+            ],
+        ];
+    }
 
     /**
      * Get rules
@@ -58,16 +67,21 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      */
     public static function getRules(string $scenario = ''): array
     {
+        $props = static::getProps();
         switch ($scenario) {
             case 'create':
-                return static::$rules;
+                return $props;
             case 'update':
-                $rules = static::$rules;
-                unset($rules['password']);
-                unset($rules['passwordConfirm']);
-                return $rules;
+                // remove required attribute
+                return array_map(function ($key) {
+                    if (($idx = array_search('required', $key)) !== false) {
+                        unset($key[$idx]);
+                    }
+                    // reset index
+                    return array_values($key);
+                }, $props);
             default:
-                return static::$rules;
+                return $props;
         }
     }
 }

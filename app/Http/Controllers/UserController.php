@@ -25,7 +25,8 @@ class UserController extends Controller
     {
         $this->validate($request, User::getRules('update'));
 
-        $user = User::findOrFail($id);
+        $user = $this->findModelOrFail(User::class, $id);
+        
         // hash password
         if (($password = $request->get('password', false)) !== false) {
             $request->merge([
