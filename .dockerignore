@@ -1,7 +1,5 @@
-/vendor
+/docker
 /coverage
-/docker/mysql/lib
-/docker/mysql/log
 /storage/app/*
 /storage/framework/cache/data/*
 /storage/framework/views/*

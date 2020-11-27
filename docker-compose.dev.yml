@@ -1,0 +1,45 @@
+version: "3.8"
+services:
+  nginx:
+    image: nginx:1.19.5-alpine
+    links:
+      - php
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./public:/var/www/html/public
+  php:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.dev
+    volumes:
+      - .:/var/www/html
+    working_dir: /var/www/html
+    command: php-fpm
+    links:
+      - db
+      - cache
+    ports:
+      - "9000"
+    env_file:
+      - .env
+  db:
+    image: mysql:8
+    command: --default-authentication-plugin=mysql_native_password # needed as of mysql 8
+    ports:
+      - "3306:${DB_PORT}"
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      TZ: ${APP_TIMEZONE}
+    volumes:
+      - ./docker/mysql/conf.d:/etc/mysql/conf.d
+      - ./docker/mysql/lib:/var/lib/mysql
+      - ./docker/mysql/log:/var/log/mysql
+  cache:
+    image: memcached:1.6.9-alpine
