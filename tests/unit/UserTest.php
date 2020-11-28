@@ -19,7 +19,11 @@ class UserTest extends TestCase
     {
         $rules = [
             'name' => ['required', 'max:255'],
-            'email' => ['required', 'email'],
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('users'),
+            ],
             'role' => [
                 'required',
                 Rule::in(['customer', 'csr', 'manager', 'admin']),
@@ -37,7 +41,7 @@ class UserTest extends TestCase
         $rulesUpdate = User::getRules('update');
         $this->assertEquals([
             'name' => ['max:255'],
-            'email' => ['email'],
+            'email' => ['email', Rule::unique('users')],
             'role' => [Rule::in(['customer', 'csr', 'manager', 'admin'])],
             'password' => ['min:6'],
             'passwordConfirm' => ['required_with:password', 'same:password'],

@@ -23,9 +23,10 @@ class UserController extends Controller
 
     public function update(int $id, Request $request): \Illuminate\Http\JsonResponse
     {
-        $this->validate($request, User::getRules('update'));
-
         $user = $this->findModelOrFail(User::class, $id);
+
+        $this->validate($request, User::getRules('update', $user));
+
         // hash password
         if (($password = $request->input('password')) !== null) {
             $request->merge([

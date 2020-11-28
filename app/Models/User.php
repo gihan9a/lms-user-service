@@ -36,15 +36,20 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     /**
      * Get model props and rules
      *
+     * @param User $user
+     * 
      * @return array
      * 
      * @author Gihan S <gihanshp@gmail.com>
      */
-    private static function getProps(): array
+    private static function getProps(User $user = null): array
     {
-        return [
+        $props = [
             'name' => ['required', 'max:255'],
-            'email' => ['required', 'email'],
+            'email' => [
+                'required',
+                'email',
+            ],
             'role' => [
                 'required',
                 Rule::in(['customer', 'csr', 'manager', 'admin']),
@@ -55,6 +60,14 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
                 'same:password'
             ],
         ];
+
+        if ($user) {
+            $props['email'][] = Rule::unique('users')->ignore($user);
+        } else {
+            $props['email'][] = Rule::unique('users');
+        }
+
+        return $props;
     }
 
     /**
@@ -66,14 +79,15 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * Somehow laravel/lumen can access protected methods from controllers
      *
      * @param string $scenario Rules for the scenario
+     * @param self   $user     A user instance to apply rules
      * 
      * @return array
      * 
      * @author Gihan S <gihanshp@gmail.com>
      */
-    protected static function getRules(string $scenario = ''): array
+    protected static function getRules(string $scenario = '', self $user = null): array
     {
-        $props = static::getProps();
+        $props = static::getProps($user);
         switch ($scenario) {
             case 'create':
                 return $props;

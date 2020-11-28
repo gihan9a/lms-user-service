@@ -20,20 +20,31 @@ class UserControllerTest extends TestCase
 {
     use DatabaseMigrations;
 
-    private function getUserValidData(): array
+    private function getUserValidData(int $idx = 1): array
     {
         return [
-            'name' => 'User1',
-            'email' => 'user1@example.com',
-            'password' => 'user1pass',
-            'passwordConfirm' => 'user1pass',
+            'name' => 'User' . $idx,
+            'email' => 'user' . $idx . '@example.com',
+            'password' => 'user' . $idx . 'pass',
+            'passwordConfirm' => 'user' . $idx . 'pass',
             'role' => 'customer',
         ];
     }
 
-    protected function createUser(): void
+    protected function createUserAndVerify(int $idx = 1): \Tests\Integration\UserControllerTest
     {
-        $this->post('/', $this->getUserValidData());
+        $dataOutput = $this->getUserValidData($idx);
+        $dataInput = $dataOutput;
+        unset($dataOutput['password']);
+        unset($dataOutput['passwordConfirm']);
+        return $this->post('/', $dataInput)
+            ->seeStatusCode(200)
+            ->seeJsonStructure([
+                'code',
+                'data',
+                'errors',
+            ])
+            ->seeJson($dataOutput);
     }
 
     /**
@@ -56,21 +67,10 @@ class UserControllerTest extends TestCase
      */
     public function testUserCreate()
     {
-        $this->createUser();
-        $this->seeStatusCode(200);
-        $this->seeJsonStructure([
-            'code',
-            'data' => [
-                'id',
-                'name',
-                'email',
-                'role',
-                'created_at',
-                'updated_at',
-            ],
-            'errors',
-        ]);
-        $data = $this->getUserValidData();
+        $this->createUserAndVerify(1);
+
+        // validate password has hashed
+        $data = $this->getUserValidData(1);
         $password = $data['password'];
         unset($data['password']);
         unset($data['passwordConfirm']);
@@ -80,8 +80,8 @@ class UserControllerTest extends TestCase
         $this->assertNotEmpty($user->password);
         $this->assertNotEquals($password, $user->password);
 
-        // try to create user with validation fail
-        $data = $this->getUserValidData();
+        // try to create user with required attributes missing
+        $data = $this->getUserValidData(3);
         // remove email and validate
         unset($data['email']);
         $this->json('POST', '/', $data)
@@ -92,6 +92,18 @@ class UserControllerTest extends TestCase
                 ],
                 'code' => 400,
             ]);
+
+        // try to create email with same email
+        $data = $this->getUserValidData(1);
+        $data['name'] = 'User2'; // just change the name
+        $this->json('POST', '/', $data)
+            ->seeJson([
+                'code' => 400,
+                'data' => null,
+                'errors' => [
+                    'email' => ['The email has already been taken.'],
+                ],
+            ]);
     }
 
     /**
@@ -100,10 +112,11 @@ class UserControllerTest extends TestCase
      */
     public function testUserUpdate(): void
     {
-        $this->createUser();
+        $this->createUserAndVerify(1);
+        $newEmail = 'user11@example.com';
         $user1data1 = [
-            'name' => 'User1',
-            'email' => 'user1@example.com',
+            'name' => 'User11',
+            'email' => $newEmail,
             'role' => 'csr',
         ];
         $this->json('PUT', '/1', $user1data1)
@@ -154,5 +167,26 @@ class UserControllerTest extends TestCase
                     'error' => ['Unable to find user 2'],
                 ]
             ]);
+
+        $this->createUserAndVerify(2);
+        // fail updating the email to duplicate
+        $this->json('PUT', '/2', [
+            'email' => $newEmail,
+        ])
+            ->seeStatusCode(400)
+            ->seeJson([
+                'code' => 400,
+                'data' => null,
+                'errors' => [
+                    'email' => ['The email has already been taken.'],
+                ]
+            ]);
+        $this->assertEquals(1, User::where('email', $newEmail)->count());
+        // email self updating should work
+
+        $this->json('PUT', '/1', [
+            'email' => $newEmail,
+        ])
+            ->seeStatusCode(200);
     }
 }
